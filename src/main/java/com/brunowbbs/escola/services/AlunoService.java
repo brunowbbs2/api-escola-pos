@@ -3,7 +3,10 @@ package com.brunowbbs.escola.services;
 import com.brunowbbs.escola.dtos.AlunoRequestDTO;
 import com.brunowbbs.escola.dtos.AlunoResponseDTO;
 import com.brunowbbs.escola.entities.AlunoEntity;
+import com.brunowbbs.escola.exceptions.AlunoNaoEncontradoException;
 import com.brunowbbs.escola.repositories.AlunoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,11 +30,16 @@ public class AlunoService {
 
 
     private AlunoResponseDTO converteToDTO(AlunoEntity aluno){
-        return new AlunoResponseDTO(aluno.getId(), aluno.getNome());
+        return new AlunoResponseDTO(aluno.getId(), aluno.getNome(), aluno.getEmail());
     }
 
-    public List<AlunoResponseDTO> listarTodos(){
-        return this.repository.findAll().stream().map(this::converteToDTO).toList();
+    public AlunoResponseDTO buscarAlunoPorEmail(String email){
+        AlunoEntity aluno =  this.repository.findByEmail(email).orElseThrow(()->new AlunoNaoEncontradoException("Aluno não encontrado!"));
+        return converteToDTO(aluno);
+    }
+
+    public Page<AlunoResponseDTO> listarPaginado(Pageable pageable){
+        return this.repository.findAll(pageable).map((aluno)-> new AlunoResponseDTO(aluno.getId(), aluno.getNome(), aluno.getEmail()));
     }
 
     public AlunoResponseByIdDTO buscarPorID(String id){
